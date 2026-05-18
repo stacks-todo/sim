@@ -1,21 +1,11 @@
-# STACKS - CLAUDE.md
+# STACKS Simulator - CLAUDE.md
 
 ## プロジェクト概要
 
-インテリア型タスク管理デバイス「STACKS」のソフトウェア。Svelte 5 + SvelteKit + MasterCSS で構築された PWA。720x720px の固定ディスプレイで動作し、Raspberry Pi の物理ロータリーノブ＋ボタンで操作する。
+インテリア型タスク管理デバイス「STACKS」の **LVGL C シミュレータ**。
+SDL2 バックエンドを使い PC 上で動作し、実機の円形ディスプレイ UI を再現する。
 
-**主目的**: Google Tasks（Google Todo）との連携によるタスク表示・操作。
-
-詳細は [requirements.md](./requirements.md) を参照。
-
-## プロダクト性質（重要）
-
-このソフトウェアは**エンドユーザーが購入して使う製品**のファームウェアである。
-
-- エンドユーザーは `.env` ファイルを直接編集しない・できない
-- デバイスはキーボードなし・タッチなし・物理ノブのみで操作
-- 初回設定（WiFi 接続・Google ログイン）はすべて**スマホ QR フロー**で完結させる
-- `.env` の設定はデバイス製造時・デプロイ時にのみ行う（ユーザー操作ではない）
+本体のファームウェア（Svelte 5 + SvelteKit）は別リポジトリ → https://github.com/stacks-todo/STACKS
 
 ## 作業ルール
 
@@ -23,136 +13,106 @@
 
 - **常に main ブランチで直接作業する。ブランチを作成してはいけない。**
 - **コミット・プッシュは基本的に行わない**
-- **npm パッケージを追加するときは、追加前に必ず確認を取ること**
-- **実装内容に応じて `CLAUDE.md` と `requirements.md` を自分で適宜更新すること**
+- **作業開始前に必ず `CLAUDE.md` を読むこと**
+- **実装内容に応じて `CLAUDE.md` を自分で適宜更新すること**
 
 ## 技術スタック
 
-- **Framework**: Svelte 5 + SvelteKit 2
-- **Styling**: MasterCSS (`@master/css`)
-- **Animation**: GSAP 3
-- **Runtime**: Node.js（`@sveltejs/adapter-node`）
-- **Deployment**: adapter-node → SvelteKit の API エンドポイントが使用可能
-
-## アーキテクチャ
-
-### 認証・外部連携
-- **Firebase は使わない**
-- Google OAuth 2.0 を SvelteKit サーバーサイドで直接実装
-- Google Tasks API へのアクセスは `/api/tasks/*` エンドポイント経由
-
-### データフロー
-```
-Google Tasks API
-      ↕ (OAuth 2.0)
-SvelteKit API Routes (/api/tasks/*)
-      ↕
-LocalTask ストア（Svelte Store + ローカルキャッシュ）
-      ↕
-各ページコンポーネント
-```
-
-### 環境変数（`.env`）
-
-> 以下はすべて**製造・デプロイ時**に設定。エンドユーザーは触らない。
-
-```
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-GOOGLE_REDIRECT_URI=        # ローカルログイン用（開発時のみ・通常不要）
-STACKS_WORKER_URL=          # Cloudflare Worker の URL（例: https://stacks-auth.xxx.workers.dev）
-STACKS_WORKER_SECRET=       # Worker との共有シークレット
-VITE_IS_PHYSICS=true        # 物理ノブ入力の有効化
-VITE_CURSOR_VISIBLE=false   # Kioskモードでカーソル非表示
-WIFI_AP_SSID=STACKS-Setup   # デバイス自身のホットスポット SSID（デフォルト可）
-WIFI_AP_PASSWORD=stacks1234 # デバイス自身のホットスポットパスワード（デフォルト可）
-```
-
-### Cloudflare Worker（`worker/`）
-
-ローカル IP に依存しない Google OAuth リレーサーバー。無料枠内に収まるよう 300 セッション/日のレートリミットを実装済み。
-
-```
-worker/
-  src/index.ts    # Worker 本体
-  wrangler.toml   # デプロイ設定（KV ID を記入してから使う）
-  tsconfig.json
-```
-
-npm スクリプト:
-- `npm run worker:login` — Cloudflare にログイン
-- `npm run worker:kv-create` — KV Namespace 作成（初回のみ）
-- `npm run worker:deploy` — デプロイ
-- `npm run worker:secret` — シークレット設定
-
-## 主要ファイル
-
-| ファイル | 役割 |
+| レイヤ | 採用技術 |
 |---|---|
-| `src/lib/localTasks.ts` | タスクのローカルストア（localStorage）。Google Tasks と1対1対応設計済み |
-| `src/lib/physicsController.ts` | 物理ノブ・ボタンの入力管理 |
-| `src/lib/pomodoroStore.ts` | ポモドーロタイマー |
-| `src/lib/languageStore.ts` | 多言語対応（ja/en/zh-Hans/zh-Hant/de/es/fr） |
-| `src/routes/api/rotation/` | Raspberry Pi からの SSE イベント受信 |
-| `src/routes/+layout.svelte` | SSE 接続・ページ遷移アニメーション |
-| `src/routes/setup/+page.svelte` | WiFi 初期設定ページ（スマホブラウザ向け・`position:fixed` で全画面） |
-| `src/routes/settings/wifi/+page.svelte` | デバイス AP の QR コード表示（720×720 デバイス画面） |
-| `src/routes/api/setup/wifi/+server.ts` | WiFi 接続 API（`nmcli` 呼び出し） |
+| UI フレームワーク | LVGL v9.6.0-dev |
+| 描画バックエンド | SDL2（PC シミュレーション） |
+| 言語 | C99 |
+| ビルドシステム | CMake 3.10+ |
+| 数値演算 | libm（`-lm`） |
 
-## WiFi 初期設定フロー
+## ビルド方法
 
-エンドユーザーがデバイスを購入後、初めて WiFi に接続するまでの流れ：
+```bash
+# ワークツリー内で実行
+mkdir build && cd build
+cmake .. && make -j$(nproc)
+./bin/main
+```
 
-1. デバイス起動 → OS 側で AP（ホットスポット）モードを起動（`hostapd` + `dnsmasq` は OS 設定）
-2. Settings → WiFi → デバイス自身の AP 用 QR コードを表示
-3. スマホで QR スキャン → `STACKS-Setup` ホットスポットに接続
-4. スマホブラウザで `http://192.168.4.1/setup` を開く
-5. 家の WiFi の SSID とパスワードを入力して送信
-6. `/api/setup/wifi` が `nmcli dev wifi connect <SSID> password <PASSWORD> ifname wlan0` を実行
-7. デバイスが家の WiFi に接続完了 → AP モード終了
+または Makefile ショートカット:
 
-**ポイント**: AP モード (`hostapd` / `dnsmasq`) の起動は OS レベルの設定で行う。SvelteKit はセットアップ UI と `nmcli` 呼び出しのみ担当。
+```bash
+make
+```
 
-## Google Tasks 連携（実装予定）
+> **注意（ワークツリー）**: `lvgl/` サブモジュールがワークツリーでは空になる場合がある。
+> CMakeLists.txt が自動的に `sim/lvgl/` にフォールバックするため、通常はそのままビルド可能。
+> フォールバックが失敗する場合は以下を実行:
+>
+> ```bash
+> git submodule update --init --recursive
+> ```
 
-### 追加予定ファイル
-- `src/lib/server/googleTasks.ts` - Google Tasks API クライアント
-- `src/lib/googleTasksStore.ts` - 同期状態を管理する Svelte ストア
-- `src/routes/api/auth/login/+server.ts` - OAuth 開始
-- `src/routes/api/auth/callback/+server.ts` - トークン取得
-- `src/routes/api/auth/logout/+server.ts` - セッション削除
-- `src/routes/api/tasks/+server.ts` - タスク一覧取得・作成
-- `src/routes/api/tasks/[id]/+server.ts` - タスク更新・削除
+## 画面構成
 
-### LocalTask ↔ Google Tasks フィールドマッピング
-| LocalTask | Google Tasks |
+キーボードの **← → 矢印キー** で画面を切り替える。
+
+| スクリーン | 内容 | キー操作 |
+|---|---|---|
+| Pomodoro | タイマー設定（作業時間・ループ回数の切替） | `Enter/Space` で状態切替 |
+| Clock | アナログ時計（システム時刻をリアルタイム表示） | — |
+| Stack | タスクのバブル可視化（静的） | — |
+| Table | タスク一覧（スクロール可能） | `↑↓` でスクロール |
+
+## ファイル構成
+
+```
+src/
+  main.c              エントリポイント（480×480 SDL ウィンドウ）
+  mouse_cursor_icon.c マウスカーソルアイコン（自動生成）
+  stacks_app.h        カラー定数・スクリーン enum・共有宣言
+  stacks_app.c        アプリ初期化・背景ヘルパー・キー操作
+  screen_clock.c      アナログ時計画面
+  screen_pomodoro.c   ポモドーロタイマー画面
+  screen_stack.c      バブル可視化画面
+  screen_table.c      タスクリスト画面
+lv_conf.h             LVGL 設定（フォント Montserrat 12–48 有効）
+CMakeLists.txt        ビルド定義
+```
+
+## デザイン仕様（Figma 準拠）
+
+| 項目 | 値 |
 |---|---|
-| `id` | `id` |
-| `title` | `title` |
-| `description` | `notes` |
-| `dueDate` | `due` (RFC 3339) |
-| `status: 'pending'` | `status: 'needsAction'` |
-| `status: 'completed'` | `status: 'completed'` |
-| `priority`, `category`, `subtasks` | ローカルのみ（API に対応フィールドなし） |
+| 画面解像度（シム） | 480 × 480 px |
+| 実機解像度 | 720 × 720 px（円形） |
+| カラーモード | ダークテーマ固定 |
+| 背景色 | `#0D0D0D` |
+| アウターリング | `#2B2B2B` |
+| ミドルリング | `#1E1E1E` |
+| インナー円 | `#121212` |
+| アクセント赤 | `#E53935` |
+| アクセントオレンジ | `#FF8C00` |
+| アクセントブルー | `#29B6F6` |
 
-## UI・表示の制約
+## 再現できること / できないこと
 
-- **固定解像度**: 720x720px（Raspberry Pi の物理ディスプレイ）
-- **タッチ操作なし**: `touch-action: none`（物理ノブで操作）
-- **カーソル非表示**: Kiosk モード
-- **ダークテーマ**: デフォルト
-- **例外**: `/setup` はスマホブラウザ向け。`position: fixed` でルートレイアウトの円を上書きし全画面表示する
+### ✅ 再現できる
 
-## ページ構成
+- 同心円リングによる「時計型」背景デザイン
+- Pomodoro タイマー UI（ピル型セレクター・再生ボタン）
+- アナログ時計（リアルタイム・時針・分針）
+- バブル可視化（静的配置）
+- タスクリスト（スクロール可能、モックデータ）
+- キーボードでの画面切替
+- カラースキーム全体（赤・オレンジ・青のアクセント）
 
-| ルート | 内容 |
+### ❌ 再現できない（理由付き）
+
+| 機能 | 理由 |
 |---|---|
-| `/` | `/pomodoro` へリダイレクト |
-| `/clock` | アナログ時計 + タスク数表示 |
-| `/stack` | タスクのバブル可視化（物理演算） |
-| `/pomodoro` | ポモドーロタイマー（ノブで操作） |
-| `/table` | タスク一覧（3D回転カルーセル） |
-| `/settings` | 言語設定・Google 認証・WiFi QR・タスクJSON編集 |
-| `/settings/wifi` | デバイス AP の QR コード表示（WiFi 設定入口） |
-| `/settings/qr` | Google Login QR コード表示 |
-| `/setup` | WiFi 初期設定フォーム（スマホ向け・全画面） |
+| 日本語テキスト | CJK フォントが lv_conf.h で無効（`LV_FONT_SOURCE_HAN_SANS_SC_14_CJK = 0`） → 英語表記に代替 |
+| バブル物理演算 | Matter.js 相当のリジッドボディ物理はゼロから実装が必要 → 静的配置で代替 |
+| GSAP アニメーション | LVGL の `lv_anim` は基本的で、複雑なイージングや演出は非対応 |
+| テーブルの 3D カルーセル | LVGL に 3D 変換 API なし |
+| Google Tasks 連携 | ネットワーク・OAuth なし → モックデータで代替 |
+| 物理ロータリーエンコーダ | PC シムなのでキーボードで代替 |
+| バブルの影・ハーフトーン効果 | LVGL の flat fill のみ → 単色で代替 |
+| WiFi セットアップ・QR フロー | C シムには不要 |
+| 多言語対応 | 実機 Svelte 側の機能 |
