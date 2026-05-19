@@ -146,7 +146,7 @@ lv_obj_t *screen_stack_create(void)
         lv_obj_set_style_bg_grad_stop(o, 180, 0);
         lv_obj_set_style_border_width(o, 0, 0);
         lv_obj_set_style_outline_width(o, 0, 0);
-        lv_obj_remove_flag(o, LV_OBJ_FLAG_SCROLLABLE);
+        lv_obj_remove_flag(o, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
         lv_obj_set_pos(o,
                        DISP_CX + INIT[i].dx - d / 2,
                        DISP_CY + INIT[i].dy - d / 2);

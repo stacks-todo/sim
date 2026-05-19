@@ -62,7 +62,7 @@ static lv_obj_t *make_pill(lv_obj_t *parent, int32_t w, int32_t h, lv_color_t bg
     lv_obj_set_style_bg_opa(o, LV_OPA_COVER, 0);
     lv_obj_set_style_border_width(o, 0, 0);
     lv_obj_set_style_outline_width(o, 0, 0);
-    lv_obj_remove_flag(o, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_remove_flag(o, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
     return o;
 }
 

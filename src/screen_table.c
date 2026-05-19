@@ -98,7 +98,7 @@ lv_obj_t *screen_table_create(void)
         lv_obj_set_style_outline_width(card, 0, 0);
         lv_obj_set_style_pad_left(card, 16, 0);
         lv_obj_set_style_pad_top(card, 12, 0);
-        lv_obj_remove_flag(card, LV_OBJ_FLAG_SCROLLABLE);
+        lv_obj_remove_flag(card, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
 
         lv_obj_t *title = lv_label_create(card);
         lv_label_set_text(title, TASKS[i].title);

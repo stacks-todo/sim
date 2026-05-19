@@ -27,7 +27,7 @@ lv_obj_t *stacks_make_circle(lv_obj_t *parent, int32_t d, lv_color_t color)
     lv_obj_set_style_border_width(o, 0, 0);
     lv_obj_set_style_outline_width(o, 0, 0);
     lv_obj_set_style_pad_all(o, 0, 0);
-    lv_obj_remove_flag(o, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_remove_flag(o, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
     return o;
 }
 

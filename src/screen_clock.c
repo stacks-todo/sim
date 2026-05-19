@@ -28,7 +28,7 @@ static lv_obj_t *make_hand(lv_obj_t *scr, int32_t len, int32_t w, lv_color_t col
     lv_obj_set_style_bg_opa(h, LV_OPA_COVER, 0);
     lv_obj_set_style_border_width(h, 0, 0);
     lv_obj_set_style_outline_width(h, 0, 0);
-    lv_obj_remove_flag(h, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_remove_flag(h, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
 
     /* pivot at bottom-center of the rectangle = clock center */
     lv_obj_set_style_transform_pivot_x(h, w / 2, 0);
