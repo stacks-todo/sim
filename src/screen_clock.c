@@ -6,11 +6,13 @@
 #define CLOCK_NUM_R  168
 #define HOUR_LEN      76   /* hand length (px) */
 #define MIN_LEN      110
+#define SEC_LEN      122
 #define HOUR_W         6
 #define MIN_W          4
+#define SEC_W          2
 
 static lv_obj_t *g_time_lbl, *g_date_lbl;
-static lv_obj_t *g_hour_hand, *g_min_hand;
+static lv_obj_t *g_hour_hand, *g_min_hand, *g_sec_hand;
 
 /*
  * Each hand is a thin rounded rectangle.
@@ -40,10 +42,12 @@ static lv_obj_t *make_hand(lv_obj_t *scr, int32_t len, int32_t w, lv_color_t col
 static void update_hands(int hh, int mm, int ss)
 {
     /* angle in 0.1° units clockwise from 12 o'clock */
-    int32_t ha = (int32_t)(((hh % 12) * 30.0f + mm * 0.5f          ) * 10.0f);
-    int32_t ma = (int32_t)((mm        *  6.0f  + ss * 0.1f          ) * 10.0f);
+    int32_t ha = (int32_t)(((hh % 12) * 30.0f + mm * 0.5f) * 10.0f);
+    int32_t ma = (int32_t)((mm        *  6.0f + ss * 0.1f) * 10.0f);
+    int32_t sa = ss * 60;   /* 6° per second × 10 = 60 */
     lv_obj_set_style_transform_rotation(g_hour_hand, ha, 0);
     lv_obj_set_style_transform_rotation(g_min_hand,  ma, 0);
+    lv_obj_set_style_transform_rotation(g_sec_hand,  sa, 0);
 }
 
 static void clock_tick_cb(lv_timer_t *t)
@@ -130,9 +134,10 @@ lv_obj_t *screen_clock_create(void)
     /* Clock hands (created after overlay so they draw on top) */
     g_hour_hand = make_hand(scr, HOUR_LEN, HOUR_W, CLR_WHITE);
     g_min_hand  = make_hand(scr, MIN_LEN,  MIN_W,  CLR_WHITE);
+    g_sec_hand  = make_hand(scr, SEC_LEN,  SEC_W,  CLR_RED);
 
     /* Center cap */
-    stacks_make_circle(scr, 12, CLR_WHITE);
+    stacks_make_circle(scr, 10, CLR_RED);
 
     /* Initial draw + recurring timer */
     clock_tick_cb(NULL);
