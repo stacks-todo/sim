@@ -4,9 +4,8 @@
 
 #define N_BUBBLES   12
 #define WALL_R      154.0f   /* inner circle radius = 328/2 */
-#define GRAVITY     0.0f
+#define GRAVITY     0.18f    /* downward acceleration per frame */
 #define DAMPING     0.985f
-#define CENTER_K    0.004f   /* spring toward center */
 #define DT          0.016f   /* ~60fps */
 
 typedef struct {
@@ -39,9 +38,8 @@ static void phys_step(void)
     /* integrate */
     for (int i = 0; i < N_BUBBLES; i++) {
         phys_bubble_t *b = &g_bub[i];
-        /* spring toward center */
-        b->vx += -CENTER_K * b->x;
-        b->vy += -CENTER_K * b->y;
+        /* gravity */
+        b->vy += GRAVITY;
         b->vx *= DAMPING;
         b->vy *= DAMPING;
         b->x  += b->vx;
