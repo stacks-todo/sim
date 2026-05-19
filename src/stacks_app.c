@@ -70,10 +70,13 @@ static void swipe_nav(int32_t dx)
     }
 }
 
+/* Registered on the indev directly (not on objects) so it fires
+ * regardless of which object is under the cursor, with no bubbling needed.
+ * user_data = the indev pointer itself for lv_indev_get_point(). */
 static void swipe_cb(lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
-    lv_indev_t *indev = lv_event_get_indev(e);
+    lv_indev_t *indev = lv_event_get_user_data(e);
     if (!indev) return;
 
     lv_point_t pt;
@@ -84,7 +87,6 @@ static void swipe_cb(lv_event_t *e)
     } else if (code == LV_EVENT_RELEASED) {
         int32_t dx = pt.x - g_drag_start.x;
         int32_t dy = pt.y - g_drag_start.y;
-        /* only trigger when horizontal motion clearly dominates */
         if (LV_ABS(dx) > LV_ABS(dy) * 2)
             swipe_nav(dx);
     }
@@ -128,14 +130,16 @@ void stacks_app_init(void)
     lv_group_add_obj(lv_group_get_default(), nav);
     lv_group_focus_obj(nav);
 
-    /* Swipe gesture: register on every screen.
-     * Non-CLICKABLE children don't capture events, so taps on empty
-     * space fall through to the screen; events from CLICKABLE children
-     * bubble up.  Either way we see PRESSED / RELEASED. */
-    for (int i = 0; i < SCR_COUNT; i++) {
-        lv_obj_add_flag(g_screens[i], LV_OBJ_FLAG_CLICKABLE);
-        lv_obj_add_event_cb(g_screens[i], swipe_cb, LV_EVENT_PRESSED,  NULL);
-        lv_obj_add_event_cb(g_screens[i], swipe_cb, LV_EVENT_RELEASED, NULL);
+    /* Swipe gesture: register directly on the pointer indev so it fires
+     * regardless of which object is hit-tested (no bubbling required). */
+    lv_indev_t *indev = lv_indev_get_next(NULL);
+    while (indev) {
+        if (lv_indev_get_type(indev) == LV_INDEV_TYPE_POINTER) {
+            lv_indev_add_event_cb(indev, swipe_cb, LV_EVENT_PRESSED,  indev);
+            lv_indev_add_event_cb(indev, swipe_cb, LV_EVENT_RELEASED, indev);
+            break;
+        }
+        indev = lv_indev_get_next(indev);
     }
 
     lv_screen_load(g_screens[SCR_POMODORO]);
