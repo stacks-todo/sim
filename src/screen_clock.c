@@ -4,27 +4,46 @@
 #include <stdio.h>
 
 #define CLOCK_NUM_R  168
-#define HOUR_LEN      70
-#define MIN_LEN      115
+#define HOUR_LEN      76   /* hand length (px) */
+#define MIN_LEN      110
+#define HOUR_W         6
+#define MIN_W          4
 
-static lv_obj_t            *g_time_lbl, *g_date_lbl;
-static lv_obj_t            *g_hour_line, *g_min_line;
-static lv_point_precise_t   g_hour_pts[2], g_min_pts[2];
+static lv_obj_t *g_time_lbl, *g_date_lbl;
+static lv_obj_t *g_hour_hand, *g_min_hand;
 
-static void update_hands(int h, int m, int s)
+/*
+ * Each hand is a thin rounded rectangle.
+ * Pivot is set to its bottom-center so it rotates around the clock center.
+ * transform_rotation is in 0.1-degree units, 0 = pointing straight up (12 o'clock).
+ */
+static lv_obj_t *make_hand(lv_obj_t *scr, int32_t len, int32_t w, lv_color_t color)
 {
-    float ha = ((h % 12) * 30.0f + m * 0.5f  - 90.0f) * (float)M_PI / 180.0f;
-    float ma = (m * 6.0f          + s * 0.1f  - 90.0f) * (float)M_PI / 180.0f;
+    lv_obj_t *h = lv_obj_create(scr);
+    lv_obj_set_size(h, w, len);
+    lv_obj_set_style_radius(h, w / 2, 0);
+    lv_obj_set_style_bg_color(h, color, 0);
+    lv_obj_set_style_bg_opa(h, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_width(h, 0, 0);
+    lv_obj_set_style_outline_width(h, 0, 0);
+    lv_obj_remove_flag(h, LV_OBJ_FLAG_SCROLLABLE);
 
-    g_hour_pts[0] = (lv_point_precise_t){ DISP_CX, DISP_CY };
-    g_hour_pts[1] = (lv_point_precise_t){ DISP_CX + HOUR_LEN * cosf(ha),
-                                          DISP_CY + HOUR_LEN * sinf(ha) };
-    lv_line_set_points_mutable(g_hour_line, g_hour_pts, 2);
+    /* pivot at bottom-center of the rectangle = clock center */
+    lv_obj_set_style_transform_pivot_x(h, w / 2, 0);
+    lv_obj_set_style_transform_pivot_y(h, len,   0);
 
-    g_min_pts[0] = (lv_point_precise_t){ DISP_CX, DISP_CY };
-    g_min_pts[1] = (lv_point_precise_t){ DISP_CX + MIN_LEN * cosf(ma),
-                                         DISP_CY + MIN_LEN * sinf(ma) };
-    lv_line_set_points_mutable(g_min_line, g_min_pts, 2);
+    /* place so that pivot lands exactly on (DISP_CX, DISP_CY) */
+    lv_obj_set_pos(h, DISP_CX - w / 2, DISP_CY - len);
+    return h;
+}
+
+static void update_hands(int hh, int mm, int ss)
+{
+    /* angle in 0.1° units clockwise from 12 o'clock */
+    int32_t ha = (int32_t)(((hh % 12) * 30.0f + mm * 0.5f          ) * 10.0f);
+    int32_t ma = (int32_t)((mm        *  6.0f  + ss * 0.1f          ) * 10.0f);
+    lv_obj_set_style_transform_rotation(g_hour_hand, ha, 0);
+    lv_obj_set_style_transform_rotation(g_min_hand,  ma, 0);
 }
 
 static void clock_tick_cb(lv_timer_t *t)
@@ -67,7 +86,7 @@ lv_obj_t *screen_clock_create(void)
                        y - lv_obj_get_height(lbl) / 2);
     }
 
-    /* 12-o'clock tick */
+    /* 12-o'clock tick mark */
     static lv_point_precise_t tick_pts[2] = {
         { DISP_CX, DISP_CY - RING_MID_D / 2 + 4  },
         { DISP_CX, DISP_CY - RING_MID_D / 2 + 20 }
@@ -78,17 +97,17 @@ lv_obj_t *screen_clock_create(void)
     lv_obj_set_style_line_width(tick, 3, 0);
     lv_obj_set_style_line_rounded(tick, true, 0);
 
-    /* Inner black overlay */
+    /* Inner black overlay (covers the digit ring interior) */
     stacks_make_circle(scr, 240, CLR_INNER);
 
-    /* Time */
+    /* Time label */
     g_time_lbl = lv_label_create(scr);
     lv_label_set_text(g_time_lbl, "00:00");
     lv_obj_set_style_text_font(g_time_lbl, &lv_font_montserrat_32, 0);
     lv_obj_set_style_text_color(g_time_lbl, CLR_WHITE, 0);
     lv_obj_align(g_time_lbl, LV_ALIGN_CENTER, 0, -52);
 
-    /* Date */
+    /* Date label */
     g_date_lbl = lv_label_create(scr);
     lv_label_set_text(g_date_lbl, "---");
     lv_obj_set_style_text_font(g_date_lbl, &lv_font_montserrat_14, 0);
@@ -108,19 +127,14 @@ lv_obj_t *screen_clock_create(void)
     lv_obj_set_style_text_color(tsk, CLR_GRAY, 0);
     lv_obj_align(tsk, LV_ALIGN_CENTER, 0, 60);
 
-    /* Clock hands */
-    g_hour_line = lv_line_create(scr);
-    lv_obj_set_style_line_color(g_hour_line, CLR_WHITE, 0);
-    lv_obj_set_style_line_width(g_hour_line, 5, 0);
-    lv_obj_set_style_line_rounded(g_hour_line, true, 0);
+    /* Clock hands (created after overlay so they draw on top) */
+    g_hour_hand = make_hand(scr, HOUR_LEN, HOUR_W, CLR_WHITE);
+    g_min_hand  = make_hand(scr, MIN_LEN,  MIN_W,  CLR_WHITE);
 
-    g_min_line = lv_line_create(scr);
-    lv_obj_set_style_line_color(g_min_line, CLR_WHITE, 0);
-    lv_obj_set_style_line_width(g_min_line, 3, 0);
-    lv_obj_set_style_line_rounded(g_min_line, true, 0);
+    /* Center cap */
+    stacks_make_circle(scr, 12, CLR_WHITE);
 
-    stacks_make_circle(scr, 12, CLR_WHITE);   /* center dot */
-
+    /* Initial draw + recurring timer */
     clock_tick_cb(NULL);
     lv_timer_create(clock_tick_cb, 1000, NULL);
     return scr;

@@ -57,16 +57,19 @@ static void key_nav_cb(lv_event_t *e)
 {
     if (lv_event_get_code(e) != LV_EVENT_KEY) return;
     uint32_t key = lv_event_get_key(e);
-    stacks_screen_t next = g_cur;
 
     if (key == LV_KEY_RIGHT || key == LV_KEY_NEXT) {
-        next = (g_cur + 1) % SCR_COUNT;
-        lv_screen_load_anim(g_screens[next], LV_SCR_LOAD_ANIM_MOVE_LEFT,  250, 0, false);
+        stacks_screen_t next = (g_cur + 1) % SCR_COUNT;
+        lv_screen_load_anim(g_screens[next], LV_SCR_LOAD_ANIM_MOVE_LEFT, 250, 0, false);
+        g_cur = next;
     } else if (key == LV_KEY_LEFT || key == LV_KEY_PREV) {
-        next = (g_cur + SCR_COUNT - 1) % SCR_COUNT;
+        stacks_screen_t next = (g_cur + SCR_COUNT - 1) % SCR_COUNT;
         lv_screen_load_anim(g_screens[next], LV_SCR_LOAD_ANIM_MOVE_RIGHT, 250, 0, false);
+        g_cur = next;
+    } else {
+        /* forward UP/DOWN/ENTER/SPACE etc. to the active screen's handler */
+        lv_obj_send_event(g_screens[g_cur], LV_EVENT_KEY, &key);
     }
-    g_cur = next;
 }
 
 /* ── Init ────────────────────────────────────────────────────── */
