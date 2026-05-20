@@ -132,6 +132,10 @@ static void key_nav_cb(lv_event_t *e)
 
 void stacks_app_init(void)
 {
+    /* Draw the background rings once on the bottom layer so they remain
+     * completely static during any screen transition. */
+    stacks_create_bg(lv_layer_bottom());
+
     g_screens[SCR_POMODORO] = screen_pomodoro_create();
     g_screens[SCR_CLOCK]    = screen_clock_create();
     g_screens[SCR_STACK]    = screen_stack_create();

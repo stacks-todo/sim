@@ -71,7 +71,9 @@ static lv_obj_t *make_pill(lv_obj_t *parent, int32_t w, int32_t h, lv_color_t bg
 lv_obj_t *screen_pomodoro_create(void)
 {
     lv_obj_t *scr = lv_obj_create(NULL);
-    stacks_create_bg(scr);
+    lv_obj_set_style_bg_opa(scr, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(scr, 0, 0);
+    lv_obj_remove_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
 
     /* Datetime */
     char dt[40]; stacks_get_datetime(dt, sizeof(dt));

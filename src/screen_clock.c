@@ -61,7 +61,10 @@ static void clock_tick_cb(lv_timer_t *t)
 lv_obj_t *screen_clock_create(void)
 {
     lv_obj_t *scr = lv_obj_create(NULL);
-    stacks_create_bg(scr);
+    /* Background is on lv_layer_bottom(); screen must be transparent. */
+    lv_obj_set_style_bg_opa(scr, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(scr, 0, 0);
+    lv_obj_remove_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
 
     /* Hour digits 1–12 */
     static const char *DIGITS[] = {

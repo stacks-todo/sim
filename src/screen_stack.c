@@ -117,7 +117,9 @@ static void phys_timer_cb(lv_timer_t *t)
 lv_obj_t *screen_stack_create(void)
 {
     lv_obj_t *scr = lv_obj_create(NULL);
-    stacks_create_bg(scr);
+    lv_obj_set_style_bg_opa(scr, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(scr, 0, 0);
+    lv_obj_remove_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
 
     char dt[40]; stacks_get_datetime(dt, sizeof(dt));
     g_stack_dt_lbl = lv_label_create(scr);
