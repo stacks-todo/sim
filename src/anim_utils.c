@@ -88,7 +88,8 @@ static void _set_opa(void *obj, int32_t v)
 
 static void _launch(lv_obj_t *obj, lv_anim_exec_xcb_t exec_cb,
                     int32_t from, int32_t to,
-                    uint32_t dur_ms, uint32_t delay_ms)
+                    uint32_t dur_ms, uint32_t delay_ms,
+                    lv_anim_path_cb_t path_cb)
 {
     lv_anim_t a;
     lv_anim_init(&a);
@@ -97,7 +98,7 @@ static void _launch(lv_obj_t *obj, lv_anim_exec_xcb_t exec_cb,
     lv_anim_set_values(&a, from, to);
     lv_anim_set_duration(&a, (int32_t)dur_ms);
     lv_anim_set_delay(&a, (int32_t)delay_ms);
-    lv_anim_set_path_cb(&a, stacks_ease_out);
+    lv_anim_set_path_cb(&a, path_cb);
     lv_anim_start(&a);
 }
 
@@ -106,17 +107,31 @@ static void _launch(lv_obj_t *obj, lv_anim_exec_xcb_t exec_cb,
 void stacks_tx_anim(lv_obj_t *obj, int32_t from, int32_t to,
                     uint32_t dur_ms, uint32_t delay_ms)
 {
-    _launch(obj, _set_tx, from, to, dur_ms, delay_ms);
+    _launch(obj, _set_tx, from, to, dur_ms, delay_ms, stacks_ease_out);
 }
 
 void stacks_ty_anim(lv_obj_t *obj, int32_t from, int32_t to,
                     uint32_t dur_ms, uint32_t delay_ms)
 {
-    _launch(obj, _set_ty, from, to, dur_ms, delay_ms);
+    _launch(obj, _set_ty, from, to, dur_ms, delay_ms, stacks_ease_out);
 }
 
 void stacks_opa_anim(lv_obj_t *obj, int32_t from, int32_t to,
                      uint32_t dur_ms, uint32_t delay_ms)
 {
-    _launch(obj, _set_opa, from, to, dur_ms, delay_ms);
+    _launch(obj, _set_opa, from, to, dur_ms, delay_ms, stacks_ease_out);
+}
+
+/* ── EASE_IN (exit/out) variants ────────────────────────────────── */
+
+void stacks_ty_anim_out(lv_obj_t *obj, int32_t from, int32_t to,
+                        uint32_t dur_ms, uint32_t delay_ms)
+{
+    _launch(obj, _set_ty, from, to, dur_ms, delay_ms, stacks_ease_in);
+}
+
+void stacks_opa_anim_out(lv_obj_t *obj, int32_t from, int32_t to,
+                         uint32_t dur_ms, uint32_t delay_ms)
+{
+    _launch(obj, _set_opa, from, to, dur_ms, delay_ms, stacks_ease_in);
 }

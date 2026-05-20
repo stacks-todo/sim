@@ -19,3 +19,9 @@ void stacks_ty_anim(lv_obj_t *obj, int32_t from, int32_t to,
                     uint32_t dur_ms, uint32_t delay_ms);
 void stacks_opa_anim(lv_obj_t *obj, int32_t from, int32_t to,
                      uint32_t dur_ms, uint32_t delay_ms);
+
+/* EASE_IN variants — for exit/out animations. */
+void stacks_ty_anim_out(lv_obj_t *obj, int32_t from, int32_t to,
+                        uint32_t dur_ms, uint32_t delay_ms);
+void stacks_opa_anim_out(lv_obj_t *obj, int32_t from, int32_t to,
+                         uint32_t dur_ms, uint32_t delay_ms);
