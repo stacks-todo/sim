@@ -183,14 +183,15 @@ lv_obj_t *screen_stack_create(void)
  */
 void screen_stack_anim_in(int dir)
 {
-    int32_t off = (int32_t)(dir * 200);
+    int32_t  off  = (int32_t)(dir * 200);
+    uint32_t base = SCR_SLIDE_MS;
 
     lv_obj_set_style_translate_x(g_stack_dt_lbl, off, 0);
-    stacks_tx_anim(g_stack_dt_lbl, off, 0, 360, 0);
+    stacks_tx_anim(g_stack_dt_lbl, off, 0, 360, base);
 
     for (int i = 0; i < N_BUBBLES; i++) {
         lv_obj_set_style_opa(g_bub[i].obj, LV_OPA_TRANSP, 0);
         stacks_opa_anim(g_bub[i].obj, LV_OPA_TRANSP, LV_OPA_COVER,
-                        360, (uint32_t)(i * 18));
+                        360, base + (uint32_t)(i * 18));
     }
 }

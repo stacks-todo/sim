@@ -168,23 +168,27 @@ lv_obj_t *screen_clock_create(void)
  */
 void screen_clock_anim_in(int dir)
 {
-    int32_t off = (int32_t)(dir * 220);
+    int32_t  off  = (int32_t)(dir * 220);
+    uint32_t base = SCR_SLIDE_MS;   /* start after screen lands */
 
-    /* Stagger the 12 digit labels (i * 12 ms = up to 132 ms spread) */
-    for (int i = 0; i < 12; i++) {
+    /* Pre-set initial offset so elements are already positioned when the
+     * screen arrives; animations then pull them to their final places. */
+    for (int i = 0; i < 12; i++)
         lv_obj_set_style_translate_x(g_digit_lbls[i], off, 0);
-        stacks_tx_anim(g_digit_lbls[i], off, 0, 380, (uint32_t)(i * 12));
-    }
-
-    /* Time and date labels (clockWrap equivalent) */
     lv_obj_set_style_translate_x(g_time_lbl, off, 0);
     lv_obj_set_style_translate_x(g_date_lbl, off, 0);
-    stacks_tx_anim(g_time_lbl, off, 0, 380, 40);
-    stacks_tx_anim(g_date_lbl, off, 0, 380, 55);
-
-    /* Task count: slides up from below (taskCountEl translateY 130 → 0) */
     lv_obj_set_style_translate_y(g_task_cnt, 130, 0);
     lv_obj_set_style_translate_y(g_task_tsk, 130, 0);
-    stacks_ty_anim(g_task_cnt, 130, 0, 400, 0);
-    stacks_ty_anim(g_task_tsk, 130, 0, 400, 30);
+
+    /* Stagger the 12 digit labels (12 ms apart) */
+    for (int i = 0; i < 12; i++)
+        stacks_tx_anim(g_digit_lbls[i], off, 0, 380, base + (uint32_t)(i * 12));
+
+    /* Time and date */
+    stacks_tx_anim(g_time_lbl, off, 0, 380, base + 20);
+    stacks_tx_anim(g_date_lbl, off, 0, 380, base + 35);
+
+    /* Task count slides up from below */
+    stacks_ty_anim(g_task_cnt, 130, 0, 400, base);
+    stacks_ty_anim(g_task_tsk, 130, 0, 400, base + 30);
 }

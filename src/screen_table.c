@@ -144,19 +144,20 @@ lv_obj_t *screen_table_create(void)
 void screen_table_anim_in(int dir)
 {
     (void)dir;
+    uint32_t base = SCR_SLIDE_MS;
 
-    /* Task count header */
+    /* Task count header — pre-set then animate */
     lv_obj_set_style_translate_y(g_tbl_cnt, 200, 0);
     lv_obj_set_style_translate_y(g_tbl_tsk, 200, 0);
-    stacks_ty_anim(g_tbl_cnt, 200, 0, 500, 0);
-    stacks_ty_anim(g_tbl_tsk, 200, 0, 500, 40);
+    stacks_ty_anim(g_tbl_cnt, 200, 0, 450, base);
+    stacks_ty_anim(g_tbl_tsk, 200, 0, 450, base + 40);
 
     /* Cards: staggered fade + slide */
     for (int i = 0; i < N_TASKS; i++) {
-        uint32_t delay = (uint32_t)(i * 12);
+        uint32_t delay = base + (uint32_t)(i * 12);
         lv_obj_set_style_opa(g_cards[i], LV_OPA_TRANSP, 0);
         lv_obj_set_style_translate_y(g_cards[i], 15, 0);
-        stacks_opa_anim(g_cards[i], LV_OPA_TRANSP, LV_OPA_COVER, 280, delay);
-        stacks_ty_anim(g_cards[i], 15, 0, 300, delay);
+        stacks_opa_anim(g_cards[i], LV_OPA_TRANSP, LV_OPA_COVER, 260, delay);
+        stacks_ty_anim(g_cards[i], 15, 0, 280, delay);
     }
 }

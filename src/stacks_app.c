@@ -70,7 +70,7 @@ static void stacks_go_to(stacks_screen_t next, int dir)
 
     lv_scr_load_anim_t slide =
         (dir > 0) ? LV_SCR_LOAD_ANIM_MOVE_LEFT : LV_SCR_LOAD_ANIM_MOVE_RIGHT;
-    lv_screen_load_anim(g_screens[next], slide, 350, 0, false);
+    lv_screen_load_anim(g_screens[next], slide, SCR_SLIDE_MS, 0, false);
     g_cur = next;
 }
 

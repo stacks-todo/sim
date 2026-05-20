@@ -145,22 +145,23 @@ lv_obj_t *screen_pomodoro_create(void)
  */
 void screen_pomodoro_anim_in(int dir)
 {
-    int32_t off = (int32_t)(dir * 220);
+    int32_t  off  = (int32_t)(dir * 220);
+    uint32_t base = SCR_SLIDE_MS;   /* start after screen lands */
 
-    lv_obj_set_style_translate_x(g_dt_lbl,    off, 0);
-    lv_obj_set_style_translate_x(g_loops_pill, off, 0);
-    lv_obj_set_style_translate_x(g_work_pill,  off, 0);
-    lv_obj_set_style_translate_x(g_sub_lbl,    off, 0);
-    lv_obj_set_style_translate_x(g_play,       off, 0);
+    /* Pre-set so elements are already at offset when screen arrives */
+    lv_obj_set_style_translate_x(g_dt_lbl,     off, 0);
+    lv_obj_set_style_translate_x(g_loops_pill,  off, 0);
+    lv_obj_set_style_translate_x(g_work_pill,   off, 0);
+    lv_obj_set_style_translate_x(g_sub_lbl,     off, 0);
+    lv_obj_set_style_translate_x(g_play,        off, 0);
+    lv_obj_set_style_translate_y(g_cnt,         130, 0);
+    lv_obj_set_style_translate_y(g_tsk,         130, 0);
 
-    stacks_tx_anim(g_dt_lbl,    off, 0, 360, 0);
-    stacks_tx_anim(g_loops_pill, off, 0, 380, 20);
-    stacks_tx_anim(g_work_pill,  off, 0, 400, 0);
-    stacks_tx_anim(g_sub_lbl,    off, 0, 360, 50);
-    stacks_tx_anim(g_play,       off, 0, 380, 30);
-
-    lv_obj_set_style_translate_y(g_cnt, 130, 0);
-    lv_obj_set_style_translate_y(g_tsk, 130, 0);
-    stacks_ty_anim(g_cnt, 130, 0, 400, 0);
-    stacks_ty_anim(g_tsk, 130, 0, 400, 40);
+    stacks_tx_anim(g_dt_lbl,     off, 0, 360, base);
+    stacks_tx_anim(g_loops_pill,  off, 0, 380, base + 20);
+    stacks_tx_anim(g_work_pill,   off, 0, 400, base);
+    stacks_tx_anim(g_sub_lbl,     off, 0, 360, base + 50);
+    stacks_tx_anim(g_play,        off, 0, 380, base + 30);
+    stacks_ty_anim(g_cnt,         130, 0, 400, base);
+    stacks_ty_anim(g_tsk,         130, 0, 400, base + 40);
 }

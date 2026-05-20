@@ -48,6 +48,11 @@ lv_obj_t  *screen_clock_create(void);
 lv_obj_t  *screen_stack_create(void);
 lv_obj_t  *screen_table_create(void);
 
+/* Duration of the screen-slide used by stacks_go_to().
+ * anim_in functions add this as a base delay so per-element animations
+ * kick in exactly when the new screen has finished landing. */
+#define SCR_SLIDE_MS 280
+
 /* Entrance animations — called just before lv_screen_load_anim.
  * dir: +1 = screen slides in from the right (→ navigation)
  *      -1 = screen slides in from the left  (← navigation)  */
