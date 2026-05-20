@@ -1,4 +1,5 @@
 #include "stacks_app.h"
+#include "anim_utils.h"
 #include <stdio.h>
 
 #define N_TASKS   12
@@ -35,6 +36,8 @@ static lv_color_t dot_color(int i)
 }
 
 static lv_obj_t *g_list;
+static lv_obj_t *g_tbl_cnt, *g_tbl_tsk;
+static lv_obj_t *g_cards[N_TASKS];
 
 static void table_key_cb(lv_event_t *e)
 {
@@ -59,17 +62,17 @@ lv_obj_t *screen_table_create(void)
     lv_obj_set_style_text_color(dt_lbl, CLR_GRAY, 0);
     lv_obj_align(dt_lbl, LV_ALIGN_CENTER, 0, -148);
 
-    lv_obj_t *cnt = lv_label_create(scr);
-    lv_label_set_text(cnt, "12");
-    lv_obj_set_style_text_font(cnt, &lv_font_montserrat_48, 0);
-    lv_obj_set_style_text_color(cnt, CLR_RED, 0);
-    lv_obj_align(cnt, LV_ALIGN_CENTER, -12, -110);
+    g_tbl_cnt = lv_label_create(scr);
+    lv_label_set_text(g_tbl_cnt, "12");
+    lv_obj_set_style_text_font(g_tbl_cnt, &lv_font_montserrat_48, 0);
+    lv_obj_set_style_text_color(g_tbl_cnt, CLR_RED, 0);
+    lv_obj_align(g_tbl_cnt, LV_ALIGN_CENTER, -12, -110);
 
-    lv_obj_t *tsk = lv_label_create(scr);
-    lv_label_set_text(tsk, "Tasks");
-    lv_obj_set_style_text_font(tsk, &lv_font_montserrat_16, 0);
-    lv_obj_set_style_text_color(tsk, CLR_GRAY, 0);
-    lv_obj_align(tsk, LV_ALIGN_CENTER, 0, -72);
+    g_tbl_tsk = lv_label_create(scr);
+    lv_label_set_text(g_tbl_tsk, "Tasks");
+    lv_obj_set_style_text_font(g_tbl_tsk, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_color(g_tbl_tsk, CLR_GRAY, 0);
+    lv_obj_align(g_tbl_tsk, LV_ALIGN_CENTER, 0, -72);
 
     /* ── scrollable list ─────────────────────────────────── */
     g_list = lv_obj_create(scr);
@@ -90,6 +93,7 @@ lv_obj_t *screen_table_create(void)
 
     for (int i = 0; i < N_TASKS; i++) {
         lv_obj_t *card = lv_obj_create(g_list);
+        g_cards[i] = card;
         lv_obj_set_size(card, CARD_W, CARD_H);
         lv_obj_set_style_radius(card, 14, 0);
         lv_obj_set_style_bg_color(card, CLR_CARD, 0);
@@ -126,4 +130,33 @@ lv_obj_t *screen_table_create(void)
     lv_obj_add_event_cb(scr, table_key_cb, LV_EVENT_KEY, NULL);
     lv_obj_add_flag(scr, LV_OBJ_FLAG_CLICKABLE);
     return scr;
+}
+
+/* Entrance animation — mirrors the Svelte firmware's Table page animateIn.
+ *
+ * Task count: slides up from y+200 (same amount as the firmware's y: 200).
+ * Cards:      fade in from opacity 0 + y+15, staggered 12 ms per card
+ *             (firmware uses stagger: { amount: 0.12 } = 120 ms total / 12 items).
+ *
+ * Direction is ignored here because the firmware always uses the same
+ * entrance animation regardless of which page the user came from.
+ */
+void screen_table_anim_in(int dir)
+{
+    (void)dir;
+
+    /* Task count header */
+    lv_obj_set_style_translate_y(g_tbl_cnt, 200, 0);
+    lv_obj_set_style_translate_y(g_tbl_tsk, 200, 0);
+    stacks_ty_anim(g_tbl_cnt, 200, 0, 500, 0);
+    stacks_ty_anim(g_tbl_tsk, 200, 0, 500, 40);
+
+    /* Cards: staggered fade + slide */
+    for (int i = 0; i < N_TASKS; i++) {
+        uint32_t delay = (uint32_t)(i * 12);
+        lv_obj_set_style_opa(g_cards[i], LV_OPA_TRANSP, 0);
+        lv_obj_set_style_translate_y(g_cards[i], 15, 0);
+        stacks_opa_anim(g_cards[i], LV_OPA_TRANSP, LV_OPA_COVER, 280, delay);
+        stacks_ty_anim(g_cards[i], 15, 0, 300, delay);
+    }
 }

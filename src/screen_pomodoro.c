@@ -1,4 +1,5 @@
 #include "stacks_app.h"
+#include "anim_utils.h"
 #include <stdio.h>
 
 typedef enum { POMO_WORKTIME = 0, POMO_LOOPS } pomo_state_t;
@@ -10,6 +11,7 @@ static int           g_loops = 10;
 static lv_obj_t *g_work_pill,  *g_work_lbl;
 static lv_obj_t *g_loops_pill, *g_loops_lbl;
 static lv_obj_t *g_sub_lbl;
+static lv_obj_t *g_dt_lbl, *g_play, *g_cnt, *g_tsk;
 
 static void pomo_refresh(void)
 {
@@ -73,11 +75,11 @@ lv_obj_t *screen_pomodoro_create(void)
 
     /* Datetime */
     char dt[40]; stacks_get_datetime(dt, sizeof(dt));
-    lv_obj_t *dt_lbl = lv_label_create(scr);
-    lv_label_set_text(dt_lbl, dt);
-    lv_obj_set_style_text_font(dt_lbl, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(dt_lbl, CLR_GRAY, 0);
-    lv_obj_align(dt_lbl, LV_ALIGN_CENTER, 0, -132);
+    g_dt_lbl = lv_label_create(scr);
+    lv_label_set_text(g_dt_lbl, dt);
+    lv_obj_set_style_text_font(g_dt_lbl, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(g_dt_lbl, CLR_GRAY, 0);
+    lv_obj_align(g_dt_lbl, LV_ALIGN_CENTER, 0, -132);
 
     /* Loops pill */
     g_loops_pill = make_pill(scr, 170, 44, CLR_INNER);
@@ -105,28 +107,60 @@ lv_obj_t *screen_pomodoro_create(void)
     lv_obj_align(g_sub_lbl, LV_ALIGN_CENTER, 0, 46);
 
     /* Play button */
-    lv_obj_t *play = make_pill(scr, 160, 48, CLR_BTN);
-    lv_obj_align(play, LV_ALIGN_CENTER, 0, 96);
-    lv_obj_t *play_lbl = lv_label_create(play);
+    g_play = make_pill(scr, 160, 48, CLR_BTN);
+    lv_obj_align(g_play, LV_ALIGN_CENTER, 0, 96);
+    lv_obj_t *play_lbl = lv_label_create(g_play);
     lv_label_set_text(play_lbl, LV_SYMBOL_PLAY);
     lv_obj_set_style_text_font(play_lbl, &lv_font_montserrat_24, 0);
     lv_obj_set_style_text_color(play_lbl, CLR_WHITE, 0);
     lv_obj_center(play_lbl);
 
     /* Task count */
-    lv_obj_t *cnt = lv_label_create(scr);
-    lv_label_set_text(cnt, "12");
-    lv_obj_set_style_text_font(cnt, &lv_font_montserrat_48, 0);
-    lv_obj_set_style_text_color(cnt, CLR_RED, 0);
-    lv_obj_align(cnt, LV_ALIGN_CENTER, -12, 150);
+    g_cnt = lv_label_create(scr);
+    lv_label_set_text(g_cnt, "12");
+    lv_obj_set_style_text_font(g_cnt, &lv_font_montserrat_48, 0);
+    lv_obj_set_style_text_color(g_cnt, CLR_RED, 0);
+    lv_obj_align(g_cnt, LV_ALIGN_CENTER, -12, 150);
 
-    lv_obj_t *tsk = lv_label_create(scr);
-    lv_label_set_text(tsk, "Tasks");
-    lv_obj_set_style_text_font(tsk, &lv_font_montserrat_16, 0);
-    lv_obj_set_style_text_color(tsk, CLR_GRAY, 0);
-    lv_obj_align(tsk, LV_ALIGN_CENTER, 0, 198);
+    g_tsk = lv_label_create(scr);
+    lv_label_set_text(g_tsk, "Tasks");
+    lv_obj_set_style_text_font(g_tsk, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_color(g_tsk, CLR_GRAY, 0);
+    lv_obj_align(g_tsk, LV_ALIGN_CENTER, 0, 198);
 
     lv_obj_add_event_cb(scr, pomo_key_cb, LV_EVENT_KEY, NULL);
     lv_obj_add_flag(scr, LV_OBJ_FLAG_CLICKABLE);
     return scr;
+}
+
+/* Entrance animation — mirrors the Svelte firmware's pageIn from /clock.
+ *
+ * dir=+1 (from Pomodoro's perspective, arriving from left / Clock exited right):
+ *   All UI panels slide in from the left (−220 px → 0).
+ * dir=−1 (arriving from right / clock is to the right):
+ *   Same but panels slide in from the right (+220 px → 0).
+ *
+ * Task count (bottom section) comes from below regardless of direction,
+ * matching the translateY(130px) → 0 in the firmware.
+ */
+void screen_pomodoro_anim_in(int dir)
+{
+    int32_t off = (int32_t)(dir * 220);
+
+    lv_obj_set_style_translate_x(g_dt_lbl,    off, 0);
+    lv_obj_set_style_translate_x(g_loops_pill, off, 0);
+    lv_obj_set_style_translate_x(g_work_pill,  off, 0);
+    lv_obj_set_style_translate_x(g_sub_lbl,    off, 0);
+    lv_obj_set_style_translate_x(g_play,       off, 0);
+
+    stacks_tx_anim(g_dt_lbl,    off, 0, 360, 0);
+    stacks_tx_anim(g_loops_pill, off, 0, 380, 20);
+    stacks_tx_anim(g_work_pill,  off, 0, 400, 0);
+    stacks_tx_anim(g_sub_lbl,    off, 0, 360, 50);
+    stacks_tx_anim(g_play,       off, 0, 380, 30);
+
+    lv_obj_set_style_translate_y(g_cnt, 130, 0);
+    lv_obj_set_style_translate_y(g_tsk, 130, 0);
+    stacks_ty_anim(g_cnt, 130, 0, 400, 0);
+    stacks_ty_anim(g_tsk, 130, 0, 400, 40);
 }

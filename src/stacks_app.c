@@ -1,4 +1,5 @@
 #include "stacks_app.h"
+#include "anim_utils.h"
 #include <time.h>
 #include <stdio.h>
 
@@ -51,6 +52,28 @@ void stacks_get_datetime(char *buf, size_t len)
     strftime(buf, len, "%b %d (%a)  %H:%M", t);
 }
 
+/* ── Screen transition ───────────────────────────────────────── */
+
+/* Trigger entrance animation then slide the screen in.
+ * dir: +1 → screen comes from the right, -1 → from the left. */
+static void stacks_go_to(stacks_screen_t next, int dir)
+{
+    if (next == g_cur) return;
+
+    switch (next) {
+        case SCR_POMODORO: screen_pomodoro_anim_in(dir); break;
+        case SCR_CLOCK:    screen_clock_anim_in(dir);    break;
+        case SCR_STACK:    screen_stack_anim_in(dir);    break;
+        case SCR_TABLE:    screen_table_anim_in(dir);    break;
+        default: break;
+    }
+
+    lv_scr_load_anim_t slide =
+        (dir > 0) ? LV_SCR_LOAD_ANIM_MOVE_LEFT : LV_SCR_LOAD_ANIM_MOVE_RIGHT;
+    lv_screen_load_anim(g_screens[next], slide, 350, 0, false);
+    g_cur = next;
+}
+
 /* ── Swipe navigation ────────────────────────────────────────── */
 
 #define SWIPE_THRESHOLD  60   /* px */
@@ -60,13 +83,9 @@ static lv_point_t g_drag_start;
 static void swipe_nav(int32_t dx)
 {
     if (dx < -SWIPE_THRESHOLD) {
-        stacks_screen_t next = (g_cur + 1) % SCR_COUNT;
-        lv_screen_load_anim(g_screens[next], LV_SCR_LOAD_ANIM_MOVE_LEFT, 250, 0, false);
-        g_cur = next;
+        stacks_go_to((g_cur + 1) % SCR_COUNT, +1);
     } else if (dx > SWIPE_THRESHOLD) {
-        stacks_screen_t next = (g_cur + SCR_COUNT - 1) % SCR_COUNT;
-        lv_screen_load_anim(g_screens[next], LV_SCR_LOAD_ANIM_MOVE_RIGHT, 250, 0, false);
-        g_cur = next;
+        stacks_go_to((g_cur + SCR_COUNT - 1) % SCR_COUNT, -1);
     }
 }
 
@@ -100,13 +119,9 @@ static void key_nav_cb(lv_event_t *e)
     uint32_t key = lv_event_get_key(e);
 
     if (key == LV_KEY_RIGHT || key == LV_KEY_NEXT) {
-        stacks_screen_t next = (g_cur + 1) % SCR_COUNT;
-        lv_screen_load_anim(g_screens[next], LV_SCR_LOAD_ANIM_MOVE_LEFT, 250, 0, false);
-        g_cur = next;
+        stacks_go_to((g_cur + 1) % SCR_COUNT, +1);
     } else if (key == LV_KEY_LEFT || key == LV_KEY_PREV) {
-        stacks_screen_t next = (g_cur + SCR_COUNT - 1) % SCR_COUNT;
-        lv_screen_load_anim(g_screens[next], LV_SCR_LOAD_ANIM_MOVE_RIGHT, 250, 0, false);
-        g_cur = next;
+        stacks_go_to((g_cur + SCR_COUNT - 1) % SCR_COUNT, -1);
     } else {
         /* forward UP/DOWN/ENTER/SPACE etc. to the active screen's handler */
         lv_obj_send_event(g_screens[g_cur], LV_EVENT_KEY, &key);

@@ -67,7 +67,8 @@ src/
   main.c              エントリポイント（480×480 SDL ウィンドウ）
   mouse_cursor_icon.c マウスカーソルアイコン（自動生成）
   stacks_app.h        カラー定数・スクリーン enum・共有宣言
-  stacks_app.c        アプリ初期化・背景ヘルパー・キー操作
+  stacks_app.c        アプリ初期化・背景ヘルパー・キー操作・画面遷移
+  anim_utils.h/c      cubic-bezier イージング・tx/ty/opa アニメーションヘルパー
   screen_clock.c      アナログ時計画面
   screen_pomodoro.c   ポモドーロタイマー画面
   screen_stack.c      バブル可視化画面
@@ -75,6 +76,38 @@ src/
 lv_conf.h             LVGL 設定（フォント Montserrat 12–48 有効）
 CMakeLists.txt        ビルド定義
 ```
+
+## アニメーション設計
+
+### カスタムイージング（`anim_utils.c`）
+
+GSAP CustomEase の cubic-bezier を C（Newton–Raphson 法）で再実装。
+LVGL の `lv_anim_path_cb_t` として差し込む。
+
+| 名前 | 曲線 | 用途 |
+|---|---|---|
+| `stacks_ease_out` | `cubic-bezier(0.086, 0.875, 0.304, 1.0)` | 画面 Enter（速く入り、ゆっくり落ち着く） |
+| `stacks_ease_in`  | `cubic-bezier(0.742, 0, 0.875, 0.322)` | 将来の Exit アニメ用（現在未使用） |
+
+### 画面遷移（`stacks_app.c` の `stacks_go_to`）
+
+`lv_screen_load_anim` を直接呼ぶ代わりに `stacks_go_to(next, dir)` を経由。
+遷移前に次画面の `screen_xxx_anim_in(dir)` を呼び、要素を初期オフセット位置に
+セットしてから LVGL のスライドアニメ（350 ms）と同時に EASE_OUT で収束させる。
+
+| `dir` | 意味 |
+|---|---|
+| `+1` | 右キー / 左スワイプ（次画面へ、右から入る） |
+| `-1` | 左キー / 右スワイプ（前画面へ、左から入る） |
+
+### 各画面の entrance アニメーション
+
+| 画面 | アニメ内容 |
+|---|---|
+| Pomodoro | UI パネル群が ±220 px 水平スライド；タスクカウントが下から 130 px 上昇 |
+| Clock | 12 数字が ±220 px 水平スライド（12 ms stagger）；時刻/日付も同様；タスクカウント 130 px 上昇 |
+| Stack | 日時ラベルが水平スライド；バブルが opacity stagger フェードイン（18 ms stagger） |
+| Table | タスクカウントが 200 px 下から上昇；カードが opacity + y+15 stagger フェードイン（12 ms stagger） |
 
 ## デザイン仕様（Figma 準拠）
 

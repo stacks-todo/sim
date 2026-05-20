@@ -1,4 +1,5 @@
 #include "stacks_app.h"
+#include "anim_utils.h"
 #include <math.h>
 #include <stdlib.h>
 
@@ -17,6 +18,7 @@ typedef struct {
 } phys_bubble_t;
 
 static phys_bubble_t g_bub[N_BUBBLES];
+static lv_obj_t     *g_stack_dt_lbl;
 
 static const struct { int16_t dx, dy; uint8_t d; } INIT[] = {
     { -74,  52, 100 }, {  48,  64,  88 }, { -18, -28,  72 },
@@ -118,11 +120,11 @@ lv_obj_t *screen_stack_create(void)
     stacks_create_bg(scr);
 
     char dt[40]; stacks_get_datetime(dt, sizeof(dt));
-    lv_obj_t *dt_lbl = lv_label_create(scr);
-    lv_label_set_text(dt_lbl, dt);
-    lv_obj_set_style_text_font(dt_lbl, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(dt_lbl, CLR_GRAY, 0);
-    lv_obj_align(dt_lbl, LV_ALIGN_CENTER, 0, -148);
+    g_stack_dt_lbl = lv_label_create(scr);
+    lv_label_set_text(g_stack_dt_lbl, dt);
+    lv_obj_set_style_text_font(g_stack_dt_lbl, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(g_stack_dt_lbl, CLR_GRAY, 0);
+    lv_obj_align(g_stack_dt_lbl, LV_ALIGN_CENTER, 0, -148);
 
     /* init physics bubbles */
     for (int i = 0; i < N_BUBBLES; i++) {
@@ -171,4 +173,24 @@ lv_obj_t *screen_stack_create(void)
     lv_timer_create(phys_timer_cb, 16, NULL);
 
     return scr;
+}
+
+/* Entrance animation — mirrors canvasWrap translate from firmware.
+ *
+ * Date label slides in from the arriving side.
+ * Bubbles fade in with a stagger so they "appear" into the container
+ * (approximates the canvasWrap width/scale expand from the firmware).
+ */
+void screen_stack_anim_in(int dir)
+{
+    int32_t off = (int32_t)(dir * 200);
+
+    lv_obj_set_style_translate_x(g_stack_dt_lbl, off, 0);
+    stacks_tx_anim(g_stack_dt_lbl, off, 0, 360, 0);
+
+    for (int i = 0; i < N_BUBBLES; i++) {
+        lv_obj_set_style_opa(g_bub[i].obj, LV_OPA_TRANSP, 0);
+        stacks_opa_anim(g_bub[i].obj, LV_OPA_TRANSP, LV_OPA_COVER,
+                        360, (uint32_t)(i * 18));
+    }
 }

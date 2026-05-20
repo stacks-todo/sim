@@ -41,6 +41,7 @@ target_include_directories(lvgl PUBLIC ${PROJECT_SOURCE_DIR} ${SDL2_INCLUDE_DIRS
 set(STACKS_SOURCES
     src/main.c
     src/mouse_cursor_icon.c
+    src/anim_utils.c
     src/stacks_app.c
     src/screen_clock.c
     src/screen_pomodoro.c

@@ -47,3 +47,11 @@ lv_obj_t  *screen_pomodoro_create(void);
 lv_obj_t  *screen_clock_create(void);
 lv_obj_t  *screen_stack_create(void);
 lv_obj_t  *screen_table_create(void);
+
+/* Entrance animations — called just before lv_screen_load_anim.
+ * dir: +1 = screen slides in from the right (→ navigation)
+ *      -1 = screen slides in from the left  (← navigation)  */
+void screen_pomodoro_anim_in(int dir);
+void screen_clock_anim_in(int dir);
+void screen_stack_anim_in(int dir);
+void screen_table_anim_in(int dir);

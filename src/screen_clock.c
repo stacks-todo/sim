@@ -1,4 +1,5 @@
 #include "stacks_app.h"
+#include "anim_utils.h"
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
@@ -10,6 +11,8 @@
 
 static lv_obj_t *g_time_lbl, *g_date_lbl;
 static lv_obj_t *g_hour_line, *g_min_line, *g_sec_line;
+static lv_obj_t *g_digit_lbls[12];
+static lv_obj_t *g_task_cnt, *g_task_tsk;
 
 /* Static point arrays — must stay alive as long as the lines exist */
 static lv_point_precise_t g_hour_pts[2];
@@ -78,6 +81,7 @@ lv_obj_t *screen_clock_create(void)
         lv_obj_set_pos(lbl,
                        x - lv_obj_get_width(lbl)  / 2,
                        y - lv_obj_get_height(lbl) / 2);
+        g_digit_lbls[i] = lbl;
     }
 
     /* 12-o'clock tick */
@@ -112,19 +116,19 @@ lv_obj_t *screen_clock_create(void)
     lv_obj_align(g_date_lbl, LV_ALIGN_CENTER, 0, -28);
 
     /* Task count */
-    lv_obj_t *cnt = lv_label_create(scr);
-    lv_label_set_text(cnt, "12");
-    lv_obj_set_style_text_font(cnt, &lv_font_montserrat_48, 0);
-    lv_obj_set_style_text_color(cnt, CLR_RED, 0);
-    lv_obj_remove_flag(cnt, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_align(cnt, LV_ALIGN_CENTER, -16, 12);
+    g_task_cnt = lv_label_create(scr);
+    lv_label_set_text(g_task_cnt, "12");
+    lv_obj_set_style_text_font(g_task_cnt, &lv_font_montserrat_48, 0);
+    lv_obj_set_style_text_color(g_task_cnt, CLR_RED, 0);
+    lv_obj_remove_flag(g_task_cnt, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_align(g_task_cnt, LV_ALIGN_CENTER, -16, 12);
 
-    lv_obj_t *tsk = lv_label_create(scr);
-    lv_label_set_text(tsk, "Tasks");
-    lv_obj_set_style_text_font(tsk, &lv_font_montserrat_16, 0);
-    lv_obj_set_style_text_color(tsk, CLR_GRAY, 0);
-    lv_obj_remove_flag(tsk, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_align(tsk, LV_ALIGN_CENTER, 0, 60);
+    g_task_tsk = lv_label_create(scr);
+    lv_label_set_text(g_task_tsk, "Tasks");
+    lv_obj_set_style_text_font(g_task_tsk, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_color(g_task_tsk, CLR_GRAY, 0);
+    lv_obj_remove_flag(g_task_tsk, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_align(g_task_tsk, LV_ALIGN_CENTER, 0, 60);
 
     /* Clock hands — lv_line (no transform_rotation, no parent-chain traversal) */
     g_hour_line = lv_line_create(scr);
@@ -152,4 +156,35 @@ lv_obj_t *screen_clock_create(void)
     clock_tick_cb(NULL);
     lv_timer_create(clock_tick_cb, 1000, NULL);
     return scr;
+}
+
+/* Entrance animation — called by stacks_app.c before lv_screen_load_anim.
+ *
+ * From Pomodoro (dir=+1): numerals + clock wrap slide in from the right.
+ * From Stack   (dir=-1): same but from the left.
+ *
+ * Task count slides up from below in both cases (mirrors the original
+ * translateY(130px) → 0 in the Svelte firmware).
+ */
+void screen_clock_anim_in(int dir)
+{
+    int32_t off = (int32_t)(dir * 220);
+
+    /* Stagger the 12 digit labels (i * 12 ms = up to 132 ms spread) */
+    for (int i = 0; i < 12; i++) {
+        lv_obj_set_style_translate_x(g_digit_lbls[i], off, 0);
+        stacks_tx_anim(g_digit_lbls[i], off, 0, 380, (uint32_t)(i * 12));
+    }
+
+    /* Time and date labels (clockWrap equivalent) */
+    lv_obj_set_style_translate_x(g_time_lbl, off, 0);
+    lv_obj_set_style_translate_x(g_date_lbl, off, 0);
+    stacks_tx_anim(g_time_lbl, off, 0, 380, 40);
+    stacks_tx_anim(g_date_lbl, off, 0, 380, 55);
+
+    /* Task count: slides up from below (taskCountEl translateY 130 → 0) */
+    lv_obj_set_style_translate_y(g_task_cnt, 130, 0);
+    lv_obj_set_style_translate_y(g_task_tsk, 130, 0);
+    stacks_ty_anim(g_task_cnt, 130, 0, 400, 0);
+    stacks_ty_anim(g_task_tsk, 130, 0, 400, 30);
 }
